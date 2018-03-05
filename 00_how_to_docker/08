@@ -1,0 +1,10 @@
+docker run --name alpine_container -it --rm alpine
+
+## -i : create an interactive shel lin the container
+## -t : allocate a pseudo-TTY connected to container's stdin
+## --rm : auto remove the container when it exits
+
+# Then, exit the container's shell and check if it is really deleted #
+
+exit
+docker ps -a # display all existing containers
