@@ -1,0 +1,21 @@
+# Create a 'webapp' folder in you home and write a 'app.py' file #
+
+mkdir ~/webapp
+vi ~/webapp/app.py
+
+```
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+	return "<h1>Hello World</h1>"
+if __name__ == "__main__":
+	app.run(host='0.0.0.0',port=3000)
+```
+
+# Run a new python container which execute Flask install then launch the app #
+
+docker run --name Abathur -d -v ~/webapp:/root -p 3000:3000 python:2-slim /bin/bash -c "pip install Flask && python2 /root/app.py"
+
+# You can use -it flags instead of -d to display the container standard output #
