@@ -1,0 +1,7 @@
+# Run docker service ps to get the current running tasks of engineering-bay service #
+
+docker service ps engineering-bay
+
+# Run docker service logs on one of the two running tasks using its ID #
+
+docker service logs -f [engineering-bay_running_task_ID]
