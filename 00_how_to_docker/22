@@ -1,0 +1,8 @@
+# Run the following command to get the right command to execute into the machine you want to become a slave (worker) node #
+
+docker swarm join-token worker
+
+# Copy the output command, log into the machine and paste it #
+
+docker-machine ssh Aiur
+docker swarm join --token [token_value] [manager_machine_ip:port]

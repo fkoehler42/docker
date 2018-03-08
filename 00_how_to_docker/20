@@ -1,0 +1,5 @@
+docker swarm init --advertise-addr [Char_IP_Address]
+
+# Run the following command to get informations about the swarm nodes #
+
+docker node ls

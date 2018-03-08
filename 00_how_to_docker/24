@@ -1,0 +1,5 @@
+docker service create -d --name orbital-command --network overmind  -e RABBITMQ_DEFAULT_USER=rabbit -e RABBITMQ_DEFAULT_PASS=pass rabbitmq
+
+# Use docker inspect on the newly created service to check its infos #
+
+docker service inspect --pretty orbital-command
