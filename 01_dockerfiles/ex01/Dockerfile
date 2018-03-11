@@ -18,4 +18,4 @@ EXPOSE 9987/udp
 EXPOSE 30033
 EXPOSE 10011
 
-ENTRYPOINT [ "/bin/bash", "-c", "~/teamspeak3-server_linux_amd64/ts3server_minimal_runscript.sh" ]
+CMD [ "/bin/bash", "-c", "~/teamspeak3-server_linux_amd64/ts3server_minimal_runscript.sh" ]
