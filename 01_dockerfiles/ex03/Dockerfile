@@ -1,6 +1,6 @@
 FROM debian
 
-RUN apt-get update -y && \
+RUN apt-get update && \
 	apt-get install -y build-essential zlib1g-dev libyaml-dev libssl1.0-dev libgdbm-dev libre2-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate rsync python-docutils pkg-config cmake git-core ca-certificates
 
 WORKDIR /tmp/ruby
@@ -74,9 +74,9 @@ RUN cp config/gitlab.yml.example config/gitlab.yml && \
 	bundle exec rake "gitlab:workhorse:install[/home/git/gitlab-workhorse]" RAILS_ENV=production && \
 	bundle exec rake gitlab:setup RAILS_ENV=production && \
 	cp lib/support/init.d/gitlab /etc/init.d/gitlab && \
-	update-rc.d gitlab defaults 21 && \
-# currently stuck here :-( #
-	bundle exec rake "gitlab:gitaly:install[/home/git/gitaly]" RAILS_ENV=production && \
+	update-rc.d gitlab defaults 21
+
+RUN	yes | bundle exec rake "gitlab:gitaly:install[/home/git/gitaly]" RAILS_ENV=production && \
 	chmod 0700 /home/git/gitlab/tmp/sockets/private && \
 	chown git /home/git/gitlab/tmp/sockets/private && \
 	cp lib/support/logrotate/gitlab /etc/logrotate.d/gitlab && \
