@@ -1,0 +1,26 @@
+version: "3.4"
+services:
+
+  mysql:
+    image: mysql:latest
+    container_name: spawning-pool
+    volumes:
+      - /var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=Kerrigan
+      - MYSQL_DATABASE=zerglings
+    restart: on-failure
+
+  wordpress:
+    image: wordpress:latest
+    container_name: lair
+    ports:
+      - "8080:80"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: roach-warden
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=spawning-pool
