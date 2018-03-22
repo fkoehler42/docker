@@ -15,19 +15,13 @@ WORKDIR ./ruby-2.3.6
 RUN ./configure --disable-install-rdoc && \
 	make && make install && \
 	gem install bundler --no-ri --no-rdoc && \
-	rm -rf /usr/local/go && \
-	curl --remote-name --progress https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz && \
-	echo '1862f4c3d3907e59b04a757cfda0ea7aa9ef39274af99a784f5be843c80c6772  go1.8.3.linux-amd64.tar.gz' | shasum -a256 -c - && \
-	sudo tar -C /usr/local -xzf go1.8.3.linux-amd64.tar.gz && \
-	sudo ln -sf /usr/local/go/bin/{go,godoc,gofmt} /usr/local/bin/ && \
-	rm go1.8.3.linux-amd64.tar.gz && \
 	curl --location https://deb.nodesource.com/setup_8.x | sudo bash - && \
-	apt-get install -y nodejs && \
+	apt-get install -y nodejs golang && \
 	curl --silent --show-error https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - && \
 	echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && \
 	apt-get update && \
 	apt-get install -y yarn postgresql postgresql-client libpq-dev postgresql-contrib && \
-	adduser --disabled-login --gecos 'GitLab' git && \
+	yes password | adduser --gecos 'GitLab' git && \
 # PostgreSQL install #
 	sudo -u postgres -H service postgresql restart && \
 	sudo -u postgres -H psql -d template1 -c "CREATE USER git CREATEDB PASSWORD 'password';" && \
@@ -50,11 +44,8 @@ WORKDIR /home/git/gitlab
 
 # CONFIGURATION STEPS #
 RUN sudo -u git -H cp config/gitlab.yml.example config/gitlab.yml && \
-#	edit gitlab.yml here to enable https (or import your own instead of copying the example one) 
 	sudo -u git -H cp config/secrets.yml.example config/secrets.yml && \
 	chmod 0600 config/secrets.yml && \
-#	chown -R git log/ && \
-#	chown -R git tmp/ && \
 	chmod -R u+rwX,go-w log/ && \
 	chmod -R u+rwX tmp/ && \
 	chmod -R u+rwX tmp/pids/ && \
@@ -79,27 +70,33 @@ RUN sudo -u git -H cp config/gitlab.yml.example config/gitlab.yml && \
 	sudo -u git -H bundle install --deployment --without development test mysql aws kerberos && \
 	service postgresql restart && \
 	service redis-server restart && \
-	sudo -u git -H yes yes | bundle exec rake gitlab:shell:install REDIS_URL=unix:/var/run/redis/redis.sock RAILS_ENV=production SKIP_STORAGE_VALIDATION=true && \
-	sudo -u git -H yes yes | bundle exec rake "gitlab:workhorse:install[/home/git/gitlab-workhorse]" RAILS_ENV=production && \
-	sudo -u git -H yes yes | bundle exec rake gitlab:setup RAILS_ENV=production && \
+	sudo -u git -H bundle exec rake gitlab:shell:install REDIS_URL=unix:/var/run/redis/redis.sock RAILS_ENV=production SKIP_STORAGE_VALIDATION=true && \
+	sudo -u git -H bundle exec rake "gitlab:workhorse:install[/home/git/gitlab-workhorse]" RAILS_ENV=production && \
+	yes yes | sudo -u git -H bundle exec rake gitlab:setup RAILS_ENV=production && \
 	cp lib/support/init.d/gitlab /etc/init.d/gitlab && \
-	update-rc.d gitlab defaults 21
-
-RUN service postgresql restart && \
-	service redis-server restart && \
+	update-rc.d gitlab defaults 21 && \
 	chown -R git:git . && \
 	sudo -u git -H bundle exec rake "gitlab:gitaly:install[/home/git/gitaly]" RAILS_ENV=production && \
 	chmod 0700 /home/git/gitlab/tmp/sockets/private && \
 	chown git /home/git/gitlab/tmp/sockets/private && \
-	cp lib/support/logrotate/gitlab /etc/logrotate.d/gitlab
+	cp lib/support/logrotate/gitlab /etc/logrotate.d/gitlab && \
+	sudo -u git -H bundle exec rake gitlab:env:info RAILS_ENV=production && \
+	sudo -u git -H bundle exec rake gettext:compile RAILS_ENV=production && \
+	sudo -u git -H yarn install --production --pure-lockfile && \
+	sudo -u git -H bundle exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production && \
+	chown -R git:git /home/git/ && \
+	apt-get install -y nginx && \
+	cp lib/support/nginx/gitlab /etc/nginx/sites-available/gitlab && \
+	sed -i -e '30,62d' /etc/nginx/sites-available/gitlab && \
+	sed -i '51s+gitlab_access;+;+' /etc/nginx/sites-available/gitlab && \
+	ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab && \
+	rm -f /etc/nginx/sites-enabled/default && \
+	sed -i '582s/# ssh_port: 22/ssh_port: 30022/' /home/git/gitlab/config/gitlab.yml && \
+	mkdir /run/sshd
 
-RUN service postgresql restart && \
-	service redis-server restart && \
-	sudo -u git -H yes yes | bundle exec rake gitlab:env:info RAILS_ENV=production && \
-	sudo -u git -H yes yes | bundle exec rake gettext:compile RAILS_ENV=production && \
-	sudo -u git -H yarn install && \
-	sudo -u git yes yes | -H bundle exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production && \
-	service gitlab start
+ADD config /home/git/.ssh/
+
+CMD /usr/sbin/sshd && service postgresql start && service redis-server start && service gitlab start && service nginx start && bash
 
 EXPOSE 80
-EXPOSE 22
+EXPOSE 30022
