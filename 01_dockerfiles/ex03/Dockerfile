@@ -21,7 +21,7 @@ RUN ./configure --disable-install-rdoc && \
 	echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && \
 	apt-get update && \
 	apt-get install -y yarn postgresql postgresql-client libpq-dev postgresql-contrib && \
-	yes password | adduser --gecos 'GitLab' git && \
+	adduser --disabled-login --gecos 'GitLab' git && \
 # PostgreSQL install #
 	sudo -u postgres -H service postgresql restart && \
 	sudo -u postgres -H psql -d template1 -c "CREATE USER git CREATEDB PASSWORD 'password';" && \
@@ -63,7 +63,6 @@ RUN sudo -u git -H cp config/gitlab.yml.example config/gitlab.yml && \
 	sudo -u git -H git config --global receive.advertisePushOptions true && \
 	sudo -u git -H cp config/resque.yml.example config/resque.yml && \
 	sudo -u git -H cp config/database.yml.postgresql config/database.yml && \
-	chown -R git:git . && \
 	sed -i 's/secure password/password/' ./config/database.yml && \ 
 	sudo -u git -H chmod o-rwx config/database.yml && \
 # BUNDLE INSTALL GEMS #
@@ -75,7 +74,6 @@ RUN sudo -u git -H cp config/gitlab.yml.example config/gitlab.yml && \
 	yes yes | sudo -u git -H bundle exec rake gitlab:setup RAILS_ENV=production && \
 	cp lib/support/init.d/gitlab /etc/init.d/gitlab && \
 	update-rc.d gitlab defaults 21 && \
-	chown -R git:git . && \
 	sudo -u git -H bundle exec rake "gitlab:gitaly:install[/home/git/gitaly]" RAILS_ENV=production && \
 	chmod 0700 /home/git/gitlab/tmp/sockets/private && \
 	chown git /home/git/gitlab/tmp/sockets/private && \
