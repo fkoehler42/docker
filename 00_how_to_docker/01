@@ -1,1 +1,1 @@
-docker-machine create --driver virtualbox --virtualbox-memory 3072 Char
+docker-machine create --driver virtualbox --virtualbox-memory 4096 Char
