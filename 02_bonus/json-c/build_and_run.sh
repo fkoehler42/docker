@@ -1,3 +1,6 @@
 #!/bin/bash
-docker build -t json-c ~/projects/docker/02_bonus/json-c
+
+BASEDIR=$(dirname "$0")"/"
+
+docker build -t json-c $BASEDIR
 docker run -it --name json-c-sample json-c
